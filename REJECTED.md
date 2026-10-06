@@ -47,4 +47,4 @@ The mismatch the criterion describes only appears if the total is computed on it
 
 ## Approaches abandoned during the build
 
-None yet.
+Passing review facts as sentences. The replay runner first handed the renderers the human-review flags as finished sentences ("fee for Day 2 was assessed before E9 reversed E7 ..."), and the text and table renderers took those sentences apart again with regular expressions to group them by reversal. Dropped during review: text is not an interface between two parts of the same program, and a change of wording would have broken the grouping silently. Replaced by a structured record per flagged fee (account, fee day, fee amount, reversing event, reversed event, closing balance now) that the renderers turn into text themselves.

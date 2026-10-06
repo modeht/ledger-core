@@ -4,6 +4,7 @@
   "description": "In-memory account ledger core",
   "scripts": {
     "test": "bun test",
+    "test:green": "bun test --path-ignore-patterns='test/failing.test.ts'",
     "typecheck": "tsc --noEmit",
     "replay": "bun run src/main.ts",
     "build": "bun build --compile src/main.ts --outfile dist/ledger-replay",
