@@ -3,17 +3,17 @@
   "version": "1.0.0",
   "description": "In-memory account ledger core",
   "scripts": {
-    "test": "vitest run",
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test:watch": "vitest"
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "replay": "bun run src/main.ts",
+    "build": "bun build --compile src/main.ts --outfile dist/ledger-replay",
+    "build:all": "bun run scripts/build-all.ts"
   },
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/node": "^26.6.4",
+    "@types/bun": "^1.4.2",
     "fast-check": "^4.10.2",
-    "typescript": "^7.0.2",
-    "vitest": "^5.0.3"
+    "typescript": "^7.0.2"
   }
 }

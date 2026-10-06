@@ -1,8 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
@@ -10,9 +12,7 @@
     "noFallthroughCasesInSwitch": true,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
-    "outDir": "dist",
-    "rootDir": ".",
-    "types": ["node"]
+    "types": ["bun"]
   },
-  "include": ["src", "test"]
+  "include": ["src", "test", "scripts"]
 }
