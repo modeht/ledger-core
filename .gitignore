@@ -7,3 +7,4 @@ data/
 .flowlens/
 scratch/
 .vscode/
+/ledger-replay.html

@@ -28,7 +28,7 @@ bun install
 bun run src/main.ts
 ```
 
-In a terminal this shows a menu. Press `1` for the full report, `2` to step through the replay, `3` for JSON, or `q` to quit. When the output goes to a pipe or a file, there is no menu and you get the full report.
+In a terminal this shows a menu. Press `1` for the full report, `2` to step through the replay, `3` for JSON, `4` for the web page, or `q` to quit. When the output goes to a pipe or a file, there is no menu and you get the full report.
 
 You can skip the menu with a flag:
 
@@ -39,8 +39,13 @@ You can skip the menu with a flag:
   - `j`: show this step as JSON
   - `d` and then a digit: jump to the start of that day
   - `q`: quit
+- `bun run src/main.ts --html` writes the replay as a web page, `ledger-replay.html`, in the current folder and opens it in your default browser.
+  - `--html=<path>` writes the page to that file instead.
+  - `--no-open` writes the page without opening it.
 - `--no-color` gives plain text with no colors. Setting `NO_COLOR` does the same.
 - `--help` lists the flags.
+
+The web page opens on the step-through. It shows one step at a time, with Previous and Next buttons and a strip of every event that you can click to jump to one. An `events only` switch, on at the start, skips the end-of-day stages. The page takes most of the terminal's keys: Enter or `n` for the next step, `b` to go back, and `d` then a digit to jump to a day, plus the arrow keys, Space, Home and End. It has no `j` or `q` key, since the JSON is further down the page and there is nothing to quit. Below the step-through come the per-day report, the summary table and the JSON, which is folded away until you open it. The page is one file with nothing loaded from the internet, so it opens offline and can be sent as an attachment. It is made from the same text the terminal prints, with the colors turned into HTML, so the two can never disagree.
 
 The report has one block per day. Each block lists the events booked that day and what happened to each one (applied, approved, declined or rejected). Then come the end-of-day lines: the past days whose closing balance changed ("re-evaluated"), the fees charged, the interest worked out so far, and, on Day 6, the interest credited ("capitalized"). Each block ends with one line per account, the state of each authorization, and any errors. After Day 6 comes a summary table. For each day it shows ACC-001's closing balance as it stands at the end ("final") next to the closing balance as it was when that day ended ("as closed"). The two differ wherever a later entry was dated back onto that day.
 
@@ -148,6 +153,7 @@ Three decisions explain most of the result:
 - src/render/table.ts: the summary table and the small text helpers the report shares.
 - src/render/json.ts: the replay result as JSON.
 - src/render/colors.ts: terminal colors, and when to turn them off.
+- src/render/html.ts: turns the colored terminal text into a web page and builds the page.
 - src/step.ts: the step mode, one event or end-of-day stage at a time.
 - src/main.ts: the command line, the menu and the flags.
 - src/index.ts: an empty module entry point.
@@ -157,6 +163,7 @@ Three decisions explain most of the result:
 - test/eod.test.ts: the end-of-day run, day by day, and a BHD account that closes below zero.
 - test/replay.test.ts: the replay of the ten events and the summary.
 - test/render.test.ts: the text report, the summary table, JSON and colors.
+- test/html.test.ts: turning colored text into HTML, the web page and the `--html` flag.
 - test/step.test.ts: the step list, each screen and the step mode keys.
 - test/main.test.ts: the command line and its flags.
 - test/acceptance.test.ts: the agreed figures day by day, one test per expected outcome in the task, and fast-check properties.
