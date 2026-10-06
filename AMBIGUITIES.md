@@ -119,3 +119,35 @@ I considered the cascading reading as View B taken to its symmetric conclusion (
 **Context.** E10 credits 10,000 BHD fils "as three equal instalments". 10,000 ÷ 3 = 3,333 remainder 1, so one instalment has to be 1 fils larger. The brief does not say which. (Criterion 7's answer, 3,334 each, is refused because it over-credits by 2 fils.)
 
 **Decision: the last one.** Instalments are 3,333, 3,333 and 3,334. Putting the extra fils on the first instalment would be just as valid; last is the usual convention because the earlier amounts stay predictable and the final one absorbs whatever is left. The build asserts that the parts always sum to the whole.
+
+## 8. Which balances interest is computed on, when past days change
+
+**Context.** Rule 2 accrues 0.04% per day on the closing ledger balance and credits the total once at the end of Day 6. Back-dated entries (E7 on Day 5, E9 on Day 6) change the closing balances of Days 2 to 5 after those days have ended. The rule does not say whether a day's accrual is fixed when the day closes or follows the balance as it is later corrected.
+
+**The two readings.** Freeze: each day's accrual is fixed at that day's end from what was known then. Recompute: at capitalization time every day's accrual is recalculated from the final value-dated closing balances.
+
+**Decision: recompute.** Nothing is credited before Day 6, so until then the accrual is a running figure the bank keeps on the side. The customer cannot withdraw it; available balance is ledger minus holds and the accrual is in neither. Correcting a figure nobody could spend costs nothing and books nothing. Freezing would give the ledger two different answers to "what was the balance on Day 2": the fee says −37,000 AED fils, the frozen accrual would say 25,000. One ledger, one balance per day.
+
+With freezing the dailies would be 10, 10, 26, 19, 0, 16 = 81; with recompute they are 10, 9, 25, 17, 16, 16 = 93.
+
+**What a real bank does.** Core banking systems recalculate interest for the affected days whenever an entry is back-valued. If the interest was not yet credited, the running accrual is corrected, as here. If it was already credited, the system posts an adjustment entry, a credit or a debit.
+
+**Production risk left open.** Once interest has been credited, a back-dated entry needs an adjustment entry rather than a recompute, and a debit adjustment can overdraw the account if the customer already moved the money. For a large balance or a long back-dating period the adjustment is not small. A limit on how far back an entry may be value-dated caps the size of any adjustment; this ledger has no such limit.
+
+## 9. Rounding each day's accrual, and how the capitalized total is formed
+
+**Context.** Day 4's accrual is 41,500 × 4 ÷ 10,000 = 16.6 AED fils. Amounts are stored in whole fils (rule 3), so each day's accrual must be rounded, and rule 2 requires the rounded dailies to sum exactly to the capitalized total. Criterion 8 says that when they do not, the remainder is discarded.
+
+**Rounding mode: nearest fils, ties up (half-up).** Rounding down every day always favours the bank (1.8 fils over this window; material over a year on a large balance). Rounding to nearest is fair on average and is what a customer expects on a statement. Ties to even would give the same result here, since no accrual in this stream lands on exactly .5. In integer arithmetic: (balance × 4 + 5,000) ÷ 10,000, rounded down, for positive balances only.
+
+**The total is the sum of the rounded dailies.** 10 + 9 + 25 + 17 + 16 + 16 = 93. Defining the total this way makes rule 2 hold by construction for any stream, and it is how real accrual works: each day's rounded accrual is added to a running figure, and capitalization credits that figure. The other method, rounding the exact total once (91.8 → 92) and then forcing the dailies to fit, creates a 1 fils mismatch that has to be pushed onto some day or dropped. Criterion 8 chooses to drop it, which contradicts rule 2 directly; with the sum-of-dailies method there is never a remainder to drop. Criterion 8 is rejected.
+
+**Consequences for the build.** A daily accrual is computed per account per day in minor units, positive balances only; the Day 6 capitalization credit equals the sum of the six dailies; a test asserts that equality.
+
+## 10. Order of the Day 6 accrual and the capitalization credit
+
+**Context.** Both happen on Day 6. If the credit is posted first, the Day 6 accrual is computed on a balance that already includes it, so the interest earns a day of interest on itself.
+
+**Decision.** The replay runs the same end-of-day sequence every day, in the order a bank's batch run uses: (1) cut-off, no more postings for the day; (2) re-evaluate the past days that today's back-dated entries touched; (3) fees, computed on the closing balance and booked with that day's value date; (4) today's interest accrual on the closing balance after fees, kept as a side figure; (5) capitalization, only on the last day of the window, one credit of the accrued figure; (6) print the day. Each step reads the balance as the earlier steps left it, and nothing a later step writes feeds back into an earlier one.
+
+On Day 6 that means: fee check on 39,000 AED fils; accrual on 39,000 (15.6 → 16); then one credit of 93 with value date Day 6. The credit does not earn interest on itself inside the window. ACC-001 ends at 39,093 AED fils; ACC-002 at 10,008 BHD fils. The code is structured as these six steps so the order is visible, not implied.
