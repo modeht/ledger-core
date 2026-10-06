@@ -32,12 +32,12 @@ Several entries refer to these two readings of rule 1 (the overdraft fee), so th
 - When a back-dated entry arrives, the ledger recomputes the closing balance of every day from the entry's value date to the current day and assesses a fee for each of those days that is now negative.
 - A fee is charged at most once per day per account, ever. Re-running the recompute must never charge a second fee for the same day.
 - A retroactive fee is itself a back-dated entry: booked on the day the recompute ran (Day 5 for E7), value date equal to the day assessed (Day 2), as rule 1 requires.
-- A later back-dated credit (E9 reverses E7) can leave a fee that is no longer deserved. Whether such fees are refunded is a separate ambiguity (see entry 2).
-- In production I would pair this with a limit on how far back an entry may be value-dated and an operations review of retroactive fees (Part 2, section 2).
+- A later back-dated credit (E9 reverses E7) can leave a fee that is no longer deserved. Whether such fees are refunded is the next ambiguity.
+- In production I would pair this with a limit on how far back an entry may be value-dated and an operations review of retroactive fees.
 
 ## 2. What does a reversal undo: the entry, or everything it caused?
 
-**Context.** E9 is typed REVERSAL and "reverses E7", with value date Day 2 (the same as E7). Under View B (entry 1), E7 caused three overdraft fees, on Days 2, 4 and 5. After E9 the recomputed balances of those days are positive again, so the fees' trigger no longer holds. The brief does not say whether the reversal also takes the fees back.
+**Context.** E9 is typed REVERSAL and "reverses E7", with value date Day 2 (the same as E7). Under View B, E7 caused three overdraft fees, on Days 2, 4 and 5. After E9 the recomputed balances of those days are positive again, so the fees' trigger no longer holds. The brief does not say whether the reversal also takes the fees back.
 
 **The two readings.**
 
@@ -60,9 +60,9 @@ I considered the cascading reading as View B taken to its symmetric conclusion (
 **Consequences for the build.**
 
 - A REVERSAL event posts one contra entry for the referenced entry, same amount, opposite direction, with the value date given by the event.
-- A reversal re-triggers the same recompute as any back-dated entry (entry 1). The recompute can assess new fees but never removes or offsets existing ones.
+- A reversal re-triggers the same recompute as any back-dated entry. The recompute can assess new fees but never removes or offsets existing ones.
 - Interest accruals are recomputed from the new value-dated balances, since they are not booked until Day 6.
-- Criterion 6 is rejected as a consequence (see REJECTED.md).
+- Criterion 6 ("after E9, all balances and fees return to their pre-E7 values") is rejected as a consequence.
 
 ## 3. A settlement whose authorization does not exist (E6, Auth-Z)
 
@@ -72,7 +72,7 @@ I considered the cascading reading as View B taken to its symmetric conclusion (
 
 **What a real bank does.** Card networks do carry settlements with no matching authorization: a force-post (the merchant obtained a voice approval code, or the terminal approved offline) or a late presentment after the issuer dropped the hold. Issuers generally must honour these and post the debit, even into overdraft. A transfer app with no card-acquiring side never sees one.
 
-**Decision: reject.** The core cannot verify that an unreferenced settlement was legitimately approved somewhere else, and paying out on an unverifiable reference is the failure mode this rule exists to prevent. Criterion 4 is correct. Force-post handling is a production feature I cut (Part 2, section 4), and "the authorization never existed" is one of the ways an authorization lifecycle ends (Part 2, section 3).
+**Decision: reject.** The core cannot verify that an unreferenced settlement was legitimately approved somewhere else, and paying out on an unverifiable reference is the failure mode this rule exists to prevent. Criterion 4 is correct. Force-post handling is a production feature I left out. "The authorization never existed" is one of the ways an authorization can end.
 
 **What "present in the ledger" means.** The criterion says "present", which is weaker than "active". A declined authorization is in the event log but created no hold; an already-settled or expired one exists but its hold is closed. I read "present" as "exists and is active": a settlement is accepted only against an active hold. That one rule covers criterion 4 and all three of those cases.
 
@@ -88,4 +88,34 @@ I considered the cascading reading as View B taken to its symmetric conclusion (
 
 **Decision: final.** Auth-A is closed and the 1,500 is released. The event does not say "partial", and holding 1,500 for the rest of the window with no expiry rule would be invented behaviour that leaves a phantom hold at the end of Day 6. The alternative changes no number in this stream (Auth-B is declined either way), which is exactly why it should be decided on principle rather than on the numbers.
 
-**Consequences for the build.** A settlement posts a debit for the settled amount, marks the authorization settled, and removes the whole hold from available balance. Partial/multi-clearing settlements and over-settlement with a tolerance (tips) are not modelled; both are listed in Part 2 as cuts.
+**Consequences for the build.** A settlement posts a debit for the settled amount, marks the authorization settled, and removes the whole hold from available balance. Partial/multi-clearing settlements and over-settlement with a tolerance (tips) are not modelled.
+
+## 5. When are fees assessed: on arrival of a back-dated entry, or at end of day?
+
+**Context.** Under View B, E7 (booked Day 5) makes Days 2 and 4 negative. Rule 1 says a fee is assessed "once per day per account", but not when the assessment runs. Assessing on arrival of E7 or at the end of Day 5 gives the same fees; it changes what E8 sees in between.
+
+**Decision: one end-of-day pass.** At the end of replay day N, the ledger walks days 1 to N in order. For each day whose recomputed closing balance, excluding that day's own fee, is negative and which has no fee yet, it books one fee with value date equal to that day and booking day N. Walking in order means the Day 2 fee is already in the balance when Day 4 is checked. One loop covers normal days and back-fills, and running it again never charges a second fee for the same day. No special on-arrival logic is needed.
+
+**Observable consequence.** When E8 arrives during Day 5, the retroactive fees are not booked yet, so the available balance it sees is −15,500 AED fils rather than −20,500. Auth-B is declined either way.
+
+**What a real bank does.** Fees are an end-of-day batch there too; intraday the balance reflects postings only.
+
+## 6. Which balance does an authorization check, and is it ever re-checked?
+
+**Context.** Rule 5 approves an authorization when "available balance (ledger balance minus active holds)" stays at or above zero after the hold. It does not say as of which moment, and value-dated entries mean a past day's ledger balance can change later. E3 (Auth-A) was approved on Day 2 against 25,000; after E7, Day 2 recomputes to −37,000.
+
+**Decision.** The check uses the available balance as of the replay day the authorization arrives, including every entry already booked (back-dated ones too), minus active holds. It is made once and never revisited. Holds and available balance are point-in-time quantities and are not recomputed for the past; only the ledger balance is value-dated. Auth-A stays approved even though Day 2 later recomputes negative, exactly as a real card approval stands once given.
+
+**Consequences in this stream.**
+
+- E8 (Auth-B, Day 5) is checked after E7 is booked: −15,500 − 0 − 9,000 < 0, so it is declined. This holds under every fee model, because E7 precedes E8 in the stream.
+- The question "is Auth-B still active at the end of the window?" no longer matters: it was never active. The brief's note that Auth-B is never settled fits a decline.
+- Criterion 5 says "If Auth-B is approved, its hold reduces available balance but not ledger balance". Auth-B is not approved, so the "if" never happens and the criterion says nothing about this stream. What it claims is correct and is how the model works. It is not rejected.
+
+**Not modelled.** Hold expiry and re-authorization.
+
+## 7. Which instalment carries the leftover fils (E10)
+
+**Context.** E10 credits 10,000 BHD fils "as three equal instalments". 10,000 ÷ 3 = 3,333 remainder 1, so one instalment has to be 1 fils larger. The brief does not say which. (Criterion 7's answer, 3,334 each, is refused because it over-credits by 2 fils.)
+
+**Decision: the last one.** Instalments are 3,333, 3,333 and 3,334. Putting the extra fils on the first instalment would be just as valid; last is the usual convention because the earlier amounts stay predictable and the final one absorbs whatever is left. The build asserts that the parts always sum to the whole.
