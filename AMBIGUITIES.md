@@ -151,3 +151,19 @@ With freezing the dailies would be 10, 10, 26, 19, 0, 16 = 81; with recompute th
 **Decision.** The replay runs the same end-of-day sequence every day, in the order a bank's batch run uses: (1) cut-off, no more postings for the day; (2) re-evaluate the past days that today's back-dated entries touched; (3) fees, computed on the closing balance and booked with that day's value date; (4) today's interest accrual on the closing balance after fees, kept as a side figure; (5) capitalization, only on the last day of the window, one credit of the accrued figure; (6) print the day. Each step reads the balance as the earlier steps left it, and nothing a later step writes feeds back into an earlier one.
 
 On Day 6 that means: fee check on 39,000 AED fils; accrual on 39,000 (15.6 → 16); then one credit of 93 with value date Day 6. The credit does not earn interest on itself inside the window. ACC-001 ends at 39,093 AED fils; ACC-002 at 10,008 BHD fils. The code is structured as these six steps so the order is visible, not implied.
+
+## 11. The fee is given in AED; ACC-002 is a BHD account
+
+**Context.** Rule 1 sets the overdraft fee at AED 25.00 and applies it "per account". ACC-002 is denominated in BHD. The brief gives no BHD fee and no exchange rate. In this stream ACC-002 never closes negative, so the question never fires, but the ledger still needs a rule.
+
+**The readings.** Convert AED 25.00 to BHD at some rate; charge 25.000 BHD by analogy; or treat the fee as defined per currency and refuse to guess.
+
+**Decision: the fee is a constant per currency, and only AED has one.** The ledger holds a fee table keyed by currency, with AED → 2,500 fils. If an account in a currency with no fee defined ever closes negative, the end-of-day pass raises an error for that account and day instead of inventing a number. Inventing a rate would put an undocumented constant into money movement; charging 25.000 BHD would be a fee roughly three times the AED one, since a dinar is worth about ten dirhams. Both are guesses, and a ledger does not guess. Converting is the right production answer once there is an agreed rate source and a rule for which day's rate applies; with neither in the brief, the honest behaviour is to stop and report.
+
+## 12. E10 is booked on Day 5 but appears after E9 (Day 6) in the stream
+
+**Context.** The stream is "replayed in this order", and E10 (booked Day 5) comes after E9 (booked Day 6). If events are processed strictly in stream order, Day 6's end-of-day run would happen before E10 is seen, and the Day 5 printout for ACC-002 would show nothing.
+
+**The readings.** Process strictly in stream order and accept that Day 5's output is printed before E10 arrives; or group events by booking day first, keep stream order within a day, and run each day's end-of-day sequence after all of that day's events.
+
+**Decision: group by booking day, stream order within the day.** The brief asks for output "per day", which only makes sense if a day's close runs after everything booked on that day. "Replayed in this order" and "per day" pull against each other for E10, and the brief leaves it to the implementer to say what the replay does; this entry is that definition. Within a day the stream order is kept, which is what makes E7 land before E8 on Day 5. E10 is the only event out of day order, and it is on a different account, so this choice changes no balance; it changes what the Day 5 report contains. Events booked on a day the replay has already closed (none in this stream) would be rejected with an error, since re-opening a closed day is what back-dating by value date is for.
