@@ -63,3 +63,29 @@ I considered the cascading reading as View B taken to its symmetric conclusion (
 - A reversal re-triggers the same recompute as any back-dated entry (entry 1). The recompute can assess new fees but never removes or offsets existing ones.
 - Interest accruals are recomputed from the new value-dated balances, since they are not booked until Day 6.
 - Criterion 6 is rejected as a consequence (see REJECTED.md).
+
+## 3. A settlement whose authorization does not exist (E6, Auth-Z)
+
+**Context.** E6 settles Auth-Z for 18,000 AED fils on Day 4. No authorization event for Auth-Z was ever recorded. Criterion 4 says such a settlement must be rejected and the funds must not leave; that criterion only covers references that are absent from the ledger, not settlements in general.
+
+**The readings.** Reject it and log an error, or post the debit anyway as a force-post.
+
+**What a real bank does.** Card networks do carry settlements with no matching authorization: a force-post (the merchant obtained a voice approval code, or the terminal approved offline) or a late presentment after the issuer dropped the hold. Issuers generally must honour these and post the debit, even into overdraft. A transfer app with no card-acquiring side never sees one.
+
+**Decision: reject.** The core cannot verify that an unreferenced settlement was legitimately approved somewhere else, and paying out on an unverifiable reference is the failure mode this rule exists to prevent. Criterion 4 is correct. Force-post handling is a production feature I cut (Part 2, section 4), and "the authorization never existed" is one of the ways an authorization lifecycle ends (Part 2, section 3).
+
+**What "present in the ledger" means.** The criterion says "present", which is weaker than "active". A declined authorization is in the event log but created no hold; an already-settled or expired one exists but its hold is closed. I read "present" as "exists and is active": a settlement is accepted only against an active hold. That one rule covers criterion 4 and all three of those cases.
+
+**Consequences for the build.** A SETTLEMENT event is accepted only if its authorization ID matches an active hold on the same account. Otherwise no entry is posted, balances are untouched, and the day's output lists the error with the reference.
+
+## 4. A settlement for less than its hold (E5, Auth-A settles 18,500 against 20,000)
+
+**Context.** Auth-A held 20,000 AED fils. E5 settles it for 18,500. The brief does not say what happens to the unused 1,500. Criterion 3 says the settlement must be accepted; that is correct, since the amount is within the hold.
+
+**The readings.** Treat the settlement as final (close the authorization, release the remainder), or keep the 1,500 held for a possible further clearing.
+
+**What a real bank does.** Settling under the hold is routine (fuel, restaurants, hotels). A clearing message is either final, which closes the authorization and releases the rest, or explicitly flagged as partial, which keeps the remainder held for further clearings until the hold expires. Final is the default. Issuers also release leftover holds automatically after a scheme-defined window.
+
+**Decision: final.** Auth-A is closed and the 1,500 is released. The event does not say "partial", and holding 1,500 for the rest of the window with no expiry rule would be invented behaviour that leaves a phantom hold at the end of Day 6. The alternative changes no number in this stream (Auth-B is declined either way), which is exactly why it should be decided on principle rather than on the numbers.
+
+**Consequences for the build.** A settlement posts a debit for the settled amount, marks the authorization settled, and removes the whole hold from available balance. Partial/multi-clearing settlements and over-settlement with a tolerance (tips) are not modelled; both are listed in Part 2 as cuts.
