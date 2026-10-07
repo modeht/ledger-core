@@ -190,7 +190,7 @@ Three rules shaped every choice. Nothing is stored twice: balances are derived, 
 
 ## Deliverables
 
-- [ARCHITECTURE.md](ARCHITECTURE.md): what the design meets in production: growth, value-dated entries, how an authorization can end, and what was cut.
+- [ARCHITECTURE.md](ARCHITECTURE.md): what the design meets in production: growth, value-dated entries, how an authorization can end, and what was cut. The same text as a four-page PDF is at [ARCHITECTURE.pdf](ARCHITECTURE.pdf) and attached to the release.
 - [AMBIGUITIES.md](AMBIGUITIES.md): twelve decisions, each with the reading chosen and why.
 - [NUMBERS.md](NUMBERS.md): every constant and where it comes from.
 - [REJECTED.md](REJECTED.md): the four expected outcomes refused, with the reasoning, and the approaches dropped during the build.
