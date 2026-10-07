@@ -107,6 +107,10 @@ This runs the strict TypeScript check.
 
 Some tests are property tests written with fast-check: they try many random inputs and check that a rule always holds, for example that an equal split always adds up to the whole amount.
 
+## Download a ready-made program
+
+The five programs are attached to the release on GitHub: https://github.com/modeht/ledger-core/releases/latest. Pick the one for your computer: macOS on Apple chips (darwin-arm64) or Intel (darwin-x64), Linux arm64 or x64, or Windows x64 (.exe). Each is one file of 60 to 90 MB and needs nothing installed. On macOS and Linux make it runnable first with `chmod +x`, then run it from a terminal or double-click it. macOS may ask you to allow it under System Settings, Privacy and Security, because it is not signed.
+
 ## Build an executable
 
 ```bash
