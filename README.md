@@ -11,7 +11,7 @@ AED has 100 fils to the dirham, so 39,093 AED fils is AED 390.93. BHD has 1,000 
 | ACC-001 | 39,093 AED fils (AED 390.93) | three fees of 2,500, on Days 2, 4 and 5 | 93 |
 | ACC-002 | 10,008 BHD fils (BHD 10.008) | none | 8 |
 
-Four of the expected outcomes in the original task are not met on purpose. AMBIGUITIES.md and REJECTED.md explain why, with the numbers.
+Four of the expected outcomes in the original task are not met on purpose. [AMBIGUITIES.md](AMBIGUITIES.md) and [REJECTED.md](REJECTED.md) explain why, with the numbers.
 
 ## Get the program
 
@@ -97,13 +97,13 @@ review  fees on Days 2, 4, 5 were charged before E9 reversed E7; those days ende
 bun test
 ```
 
-This runs every test file. It ends with exactly one failure, on purpose. The failing test is in test/failing.test.ts. It expects an overdraft fee on a BHD account, but no BHD fee was ever defined. The comment at the top of that file explains what the failure shows.
+This runs every test file. It ends with exactly one failure, on purpose. The failing test is in [test/failing.test.ts](test/failing.test.ts). It expects an overdraft fee on a BHD account, but no BHD fee was ever defined. The comment at the top of that file explains what the failure shows.
 
 ```bash
 bun run test:green
 ```
 
-This runs every test file except test/failing.test.ts, so it should end with no failures.
+This runs every test file except [test/failing.test.ts](test/failing.test.ts), so it should end with no failures.
 
 ```bash
 bun run typecheck
@@ -153,7 +153,7 @@ The code has four layers, and each one only talks to the one below it.
 3. **The end of day** (src/eod.ts). Six stage functions in a fixed order, each with one job: cutoff closes the day; re-evaluate lists the past days whose balance moved; fees walks the days in order and charges each negative day once; interest works out each day's accrual as a side figure; capitalize books one credit on the last day; report stores the closings for the next run to compare against. The order is the point: fees before interest so interest sees the fee, accrual before capitalize so the credit does not earn interest on itself.
 4. **Replay and output** (src/replay.ts, src/render/, src/step.ts, src/main.ts). The replay runner groups events by booking day, applies them in stream order, runs the end of day, and returns one result object. It prints nothing. The text report, the summary table, the JSON, the web page and the step mode all read that object. The web page is made from the terminal's own text, so the two cannot differ. The step mode rebuilds the ledger from scratch for each screen, so going back a step is running one step fewer.
 
-Three rules shaped every choice. Nothing is stored twice: balances are derived, not kept. Nothing is changed after it is written: entries are frozen. The core never invents a number: a currency with no fee is an error, and a fee that a reversal leaves behind is flagged for a person, not refunded. ARCHITECTURE.md says what this design meets in production and what was left out.
+Three rules shaped every choice. Nothing is stored twice: balances are derived, not kept. Nothing is changed after it is written: entries are frozen. The core never invents a number: a currency with no fee is an error, and a fee that a reversal leaves behind is flagged for a person, not refunded. [ARCHITECTURE.md](ARCHITECTURE.md) says what this design meets in production and what was left out.
 
 ## Project layout
 
@@ -184,15 +184,15 @@ Three rules shaped every choice. Nothing is stored twice: balances are derived, 
 - test/step.test.ts: the step list, each screen and the step mode keys.
 - test/main.test.ts: the command line and its flags, including `--html`.
 - test/acceptance.test.ts: the agreed figures day by day, one test per expected outcome in the task, and fast-check properties.
-- test/failing.test.ts: the one test that fails on purpose, with its explanation.
+- [test/failing.test.ts](test/failing.test.ts): the one test that fails on purpose, with its explanation.
 - test/smoke.test.ts: checks that the test runner works.
 - scripts/build-all.ts: builds the five standalone programs.
 
 ## Deliverables
 
-- ARCHITECTURE.md: what the design meets in production: growth, value-dated entries, how an authorization can end, and what was cut.
-- AMBIGUITIES.md: twelve decisions, each with the reading chosen and why.
-- NUMBERS.md: every constant and where it comes from.
-- REJECTED.md: the four expected outcomes refused, with the reasoning, and the approaches dropped during the build.
-- WORKLOG.md: a log of the work, with times.
-- test/failing.test.ts: the failing test, with comments.
+- [ARCHITECTURE.md](ARCHITECTURE.md): what the design meets in production: growth, value-dated entries, how an authorization can end, and what was cut.
+- [AMBIGUITIES.md](AMBIGUITIES.md): twelve decisions, each with the reading chosen and why.
+- [NUMBERS.md](NUMBERS.md): every constant and where it comes from.
+- [REJECTED.md](REJECTED.md): the four expected outcomes refused, with the reasoning, and the approaches dropped during the build.
+- [WORKLOG.md](WORKLOG.md): a log of the work, with times.
+- [test/failing.test.ts](test/failing.test.ts): the failing test, with comments.

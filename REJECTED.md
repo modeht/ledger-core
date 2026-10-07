@@ -10,15 +10,15 @@ Amounts are in minor units: AED fils (100 per dirham) and BHD fils (1,000 per di
 
 **Refused.** E7 causes three fees, on Days 2, 4 and 5.
 
-E7 is a 62,000 AED fils debit with value date Day 2. With it in place, the closing balances are: Day 2, 25,000 − 62,000 = −37,000; Day 3, −37,000 + 40,000 = 3,000 before the Day 2 fee (500 after it); Day 4, 500 − 18,500 = −18,000; Day 5, unchanged, still negative. Three days close negative, and rule 1 charges once per negative day. The Day 4 and Day 5 fees are not a side effect of the Day 2 fee: even with no fee on Day 2, Day 4 would close at −15,500.
+E7 is a 62,000 AED fils debit with value date Day 2. With it in place, the closing balances are: Day 2, 25,000 − 62,000 = −37,000; Day 3, −37,000 + 40,000 = 3,000 before the Day 2 fee (500 after it); Day 4, 500 − 18,500 = −18,000; Day 5, unchanged, still negative. Three days close negative, and rule 1 (the overdraft fee of AED 25.00 per account) charges once per negative day. The Day 4 and Day 5 fees are not a side effect of the Day 2 fee: even with no fee on Day 2, Day 4 would close at −15,500.
 
-Under the other reading of rule 1, where fees are fixed when each day ends and never revisited, E7 would cause one fee, but on Day 5, not Day 2. The criterion is wrong under both readings: wrong count under one, wrong day under the other.
+Under the other reading of rule 1, View A, where fees are fixed when each day ends and never revisited (see [Reference: the two fee models](AMBIGUITIES.md#reference-the-two-fee-models)), E7 would cause one fee, but on Day 5, not Day 2. The criterion is wrong under both readings: wrong count under one, wrong day under the other.
 
 ### Criterion 6: "After E9, all balances and fees return to their pre-E7 values."
 
 **Refused.** Balances do not return, and fees cannot.
 
-E9 reverses E7: it posts a 62,000 AED fils credit value-dated Day 2, the mirror of E7's debit. That cancels E7's amount and nothing else. The three overdraft fees that E7 caused (Days 2, 4 and 5, 2,500 AED fils each, under View B) are entries in their own right. They stay in every closing balance from their value date onward. Nothing in the rules un-assesses a fee, and the stream contains no refund event.
+E9 reverses E7: it posts a 62,000 AED fils credit value-dated Day 2, the mirror of E7's debit. That cancels E7's amount and nothing else. The three overdraft fees that E7 caused (Days 2, 4 and 5, 2,500 AED fils each, under View B: fees recalculated by value date, so a back-dated entry can create a fee on a past day; see [Reference: the two fee models](AMBIGUITIES.md#reference-the-two-fee-models)) are entries in their own right. They stay in every closing balance from their value date onward. Nothing in the rules un-assesses a fee, and the stream contains no refund event.
 
 The numbers, ACC-001 before interest:
 
@@ -29,7 +29,7 @@ The numbers, ACC-001 before interest:
 
 The gap is exactly the fees.
 
-Even if the fees were refunded by new credit entries, the ledger would not "return" to anything: it is append-only (rule 4), so it would hold E7, E9, three fees and three refunds. Balances could match the pre-E7 figures; the record never could. The criterion asks for a reset, and an append-only ledger has no reset.
+Even if the fees were refunded by new credit entries, the ledger would not "return" to anything: it is append-only (rule 4: no event record is ever changed or deleted), so it would hold E7, E9, three fees and three refunds. Balances could match the pre-E7 figures; the record never could. The criterion asks for a reset, and an append-only ledger has no reset.
 
 What does hold after E9: E7's principal is cancelled, and the interest accruals for Days 2 to 5 are recomputed from the restored balances, because accruals are not booked until Day 6.
 
@@ -41,7 +41,7 @@ What does hold after E9: E7's principal is cancelled, and the interest accruals 
 
 ### Criterion 8: "If the rounded daily interest accruals do not sum to the capitalized total, the remainder is discarded."
 
-**Refused.** Rule 2 says the rounded dailies must sum exactly to the capitalized total. A rule that says "they must match" and a criterion that says "when they don't, drop the difference" cannot both hold.
+**Refused.** Rule 2 (the daily-interest rule, 0.04% per day on positive balances) says the rounded dailies must sum exactly to the capitalized total. A rule that says "they must match" and a criterion that says "when they don't, drop the difference" cannot both hold.
 
 The mismatch the criterion describes only appears if the total is computed on its own (exact 91.8 AED fils, rounded to 92) while the dailies are rounded separately (10 + 9 + 25 + 17 + 16 + 16 = 93). The ledger instead defines the capitalized total as the sum of the rounded dailies, so the two are equal by construction and there is never a remainder. Discarding a remainder would also mean the customer is credited less than the ledger says they earned.
 
