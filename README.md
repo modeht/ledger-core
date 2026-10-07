@@ -13,6 +13,12 @@ AED has 100 fils to the dirham, so 39,093 AED fils is AED 390.93. BHD has 1,000 
 
 Four of the expected outcomes in the original task are not met on purpose. AMBIGUITIES.md and REJECTED.md explain why, with the numbers.
 
+## Get the program
+
+Two ways. Download a ready-made program from the release page, or install Bun and run it from source (next section).
+
+The five programs are attached to the release on GitHub: https://github.com/modeht/ledger-core/releases/latest. Pick the one for your computer: macOS on Apple chips (darwin-arm64) or Intel (darwin-x64), Linux arm64 or x64, or Windows x64 (.exe). Each is one file of 60 to 90 MB and needs nothing installed. On macOS and Linux make it runnable first with `chmod +x`, then run it from a terminal or double-click it. macOS may ask you to allow it under System Settings, Privacy and Security, because it is not signed.
+
 ## Install
 
 You need Bun 1.4 or later.
@@ -107,10 +113,6 @@ This runs the strict TypeScript check.
 
 Some tests are property tests written with fast-check: they try many random inputs and check that a rule always holds, for example that an equal split always adds up to the whole amount.
 
-## Download a ready-made program
-
-The five programs are attached to the release on GitHub: https://github.com/modeht/ledger-core/releases/latest. Pick the one for your computer: macOS on Apple chips (darwin-arm64) or Intel (darwin-x64), Linux arm64 or x64, or Windows x64 (.exe). Each is one file of 60 to 90 MB and needs nothing installed. On macOS and Linux make it runnable first with `chmod +x`, then run it from a terminal or double-click it. macOS may ask you to allow it under System Settings, Privacy and Security, because it is not signed.
-
 ## Build an executable
 
 ```bash
@@ -141,6 +143,17 @@ Three decisions explain most of the result:
 - Fees are worked out by the day an entry counts for (its value date), not the day it was booked. So an entry dated back onto an earlier day can create fees on earlier days.
 - A reversal cancels the entries of one event and nothing else. The fees that event caused stay, and they are flagged for a person to review.
 - An authorization checks the available balance at the moment it arrives and is never checked again later.
+
+## How it is built
+
+The code has four layers, and each one only talks to the one below it.
+
+1. **Money and events** (src/money.ts, src/constants.ts, src/events.ts). An amount is a whole number of fils in a branded type, so a plain number cannot be passed where fils are expected. The interest rate is the pair 4 per 10,000, never a decimal. An event is one of five shapes (credit, debit, authorization, settlement, reversal), checked for form before it reaches the ledger.
+2. **The ledger** (src/entries.ts, src/holds.ts, src/ledger.ts). The entry log has one way in, append, and hands out frozen entries; there is no update and no delete. Holds are the one piece of state that changes in place, because a hold is what is reserved right now, not a record of money that moved; only the holds module may change one, and everyone else gets a frozen copy. The ledger applies one event at a time: every check runs first, and only then are entries written, so a refused event leaves nothing behind. A balance is never stored. The closing balance of a day is worked out each time from the entries whose value day is on or before it, which is what lets an entry dated back onto an earlier day change that day's balance with no special case.
+3. **The end of day** (src/eod.ts). Six stage functions in a fixed order, each with one job: cutoff closes the day; re-evaluate lists the past days whose balance moved; fees walks the days in order and charges each negative day once; interest works out each day's accrual as a side figure; capitalize books one credit on the last day; report stores the closings for the next run to compare against. The order is the point: fees before interest so interest sees the fee, accrual before capitalize so the credit does not earn interest on itself.
+4. **Replay and output** (src/replay.ts, src/render/, src/step.ts, src/main.ts). The replay runner groups events by booking day, applies them in stream order, runs the end of day, and returns one result object. It prints nothing. The text report, the summary table, the JSON, the web page and the step mode all read that object. The web page is made from the terminal's own text, so the two cannot differ. The step mode rebuilds the ledger from scratch for each screen, so going back a step is running one step fewer.
+
+Three rules shaped every choice. Nothing is stored twice: balances are derived, not kept. Nothing is changed after it is written: entries are frozen. The core never invents a number: a currency with no fee is an error, and a fee that a reversal leaves behind is flagged for a person, not refunded. ARCHITECTURE.md says what this design meets in production and what was left out.
 
 ## Project layout
 
