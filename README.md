@@ -163,9 +163,9 @@ Three decisions explain most of the result:
 - test/eod.test.ts: the end-of-day run, day by day, and a BHD account that closes below zero.
 - test/replay.test.ts: the replay of the ten events and the summary.
 - test/render.test.ts: the text report, the summary table, JSON and colors.
-- test/html.test.ts: turning colored text into HTML, the web page and the `--html` flag.
+- test/html.test.ts: turning colored text into HTML and the web page.
 - test/step.test.ts: the step list, each screen and the step mode keys.
-- test/main.test.ts: the command line and its flags.
+- test/main.test.ts: the command line and its flags, including `--html`.
 - test/acceptance.test.ts: the agreed figures day by day, one test per expected outcome in the task, and fast-check properties.
 - test/failing.test.ts: the one test that fails on purpose, with its explanation.
 - test/smoke.test.ts: checks that the test runner works.
@@ -173,6 +173,7 @@ Three decisions explain most of the result:
 
 ## Deliverables
 
+- ARCHITECTURE.md: what the design meets in production: growth, value-dated entries, how an authorization can end, and what was cut.
 - AMBIGUITIES.md: twelve decisions, each with the reading chosen and why.
 - NUMBERS.md: every constant and where it comes from.
 - REJECTED.md: the four expected outcomes refused, with the reasoning, and the approaches dropped during the build.
